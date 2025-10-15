@@ -1,0 +1,85 @@
+## In cicd.yml we will focus on two things in a workflow : 1. Build and Test 2. Deploy ----> Both these things will be executed in a linux container : i.e. ubuntu latest.
+## For deployment we will need to configure our docker username and password(which are my secret keys) ---> which u have option to put in github itself.
+## Our aim is to create a workflow which will help us build and test the entire application and will also try to create continious deployment where it will try to deploy the entire application in the form of Docker image into the Docker Hub , so that anybody can use those specific images.
+## Then finally we will deploy it in the Docker hub.
+## After we deploy in docker hub we will pull that image and see whether its working fine or not.
+
+name: CI/CD for Dockerized Flask App  ## Name of the workflow we are specifically using
+
+## On which events we need to trigger the workflow + on which branches
+on:
+    push:
+        branches: [ main ]
+    pull_request:
+        branches: [ main ]
+        
+jobs:
+    build-and-test:  ## To run ur unit-testing(unit test cases) , build-and-test ---> this is the job name
+        runs-on: ubuntu-latest  ## We are using container : ubuntu-latest container , it is running on ubuntu-latest container
+        
+        steps:
+        - name: Checkout code   
+          uses: actions/checkout@v3 ## first step is to checkout the code from the repository
+          
+        - name: Set up Python
+          uses: actions/setup-python@v4  ## second step is to setup python(this will be inside the container)
+          with:
+            python-version: '3.9'  
+        
+        - name: Install dependencies
+          run: |
+            python -m pip install --upgrade pip
+            pip install flask
+            pip install pytest
+         
+        - name: Run tests
+          run: |
+            pytest
+            
+    build-and-publish:  ## 2nd job(build-and-publish is the name of job that i have specified , u can specify any name)
+        needs: build-and-test  ## This needs keyword is very important , its saying that u first need to perform build-and-test then only u have to start this 2nd job(build-and-publish) , if u remove this needs keyword both can start parallely. 
+        runs-on: ubuntu-latest ## This job also runs on ubuntu-latest container
+        
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v2 ## This github action provides u inorder to setup the docker
+            
+            ## Our main aim is that we want to take our entire docker image , build it , and then push it to the docker hub.
+              
+            - name: Login to DockerHub
+              uses: docker/login-action@v2  ## Another action provided by github-actions to login to the docker hub
+              with:
+                username: ${{ secrets.DOCKER_USERNAME }}  ## This is the most important thing from where do u get the docker_username and docker_password. 
+                password: ${{ secrets.DOCKER_PASSWORD}}   ## For this login to docker hub. 
+            ## In the docker hub u can publish any kind of docker image u want and it will be accessible for everyone. 
+            ## To get username and password : username is available in ur docker hub profile take from there.
+            ## Inorder to get the password u need to get the tokens , ---> Go to account settings(Available when u click ur docker hub profile icon).
+            ## In account setting u will see something called as Personal Access Token , click it ----> On next page click Generate new token(after that u have to pass the name also). Here make ensure that in access permissions it should have Read , Write and Delete option. 
+            ## This option of read, write, delete will allow us to directly publish in the docker hub , if u want to delete u can directly delete , or u can write anything. 
+            ## After setting the access permissions click on generate. ---> u will get ur personal access token. 
+            ## If i have this personal access token that basically means that in my docker hub i will be able to upload all my images. 
+            ## U can access this image run my entire application. 
+            ## Copy the access token , go to ur github repo --> there u have something called as settings. 
+            ## In settings go down and u will have soemthing called as "Security" in that u have secret and variables , and inside secret and variables u have something called as "Actions" ,click actions. 
+            ## Here inside actions we will create repository secrets : Here i have to create two secret keys --> DOCKER_USERNAME and DOCKER_PASSWORD
+            ## Create the secret keys there : it will name(of secret key) and secret(value of the secret key)
+            ## Firstly name will be : DOCKER_USERNAME and secret will be : ur username(docker username) ,then click Add secret
+            ## For second key again click new repository secret , name will be DOCKER_PASSWORD , value(secret) will be the access token which u got. 
+            ## Once u add the keys github actions will be able to access it. 
+
+            - name: Build and push Docker image
+              uses: docker/build-push-action@v4  ## For this also we have a seperate image , already provided by docker and github-actions itself. 
+              with: 
+                context: .
+                push: true
+                tags: ${{ secrets.DOCKER_USERNAME }}/flasktest-app:latest  ## Here we are assigning a Tag name ---> naming convention of Docker should be in this way: username/app_name(whatever u want):latest(or any version that u want)
+            ## By this we are pushing the docker image to docker hub    
+
+            - name: Image digest
+              run: echo ${{ steps.build-and-publish.outputs.digest }}    ## echoing some of the info that comes from digest
+
+## Now we will open the terminal and push everything.
+## Commands : git add . , then git commit -m "Docker ci cd yaml file is ready"  then git push -u orign main             
