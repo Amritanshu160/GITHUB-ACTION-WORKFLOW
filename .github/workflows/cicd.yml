@@ -74,6 +74,7 @@ jobs:
               uses: docker/build-push-action@v4  ## For this also we have a seperate image , already provided by docker and github-actions itself. 
               with: 
                 context: .
+                file: ./Dockerfile  ## Specifying ur dockerfile name is also important , we are adding this path in yml file. 
                 push: true
                 tags: ${{ secrets.DOCKER_USERNAME }}/flasktest-app:latest  ## Here we are assigning a Tag name ---> naming convention of Docker should be in this way: username/app_name(whatever u want):latest(or any version that u want)
             ## By this we are pushing the docker image to docker hub    
@@ -82,4 +83,5 @@ jobs:
               run: echo ${{ steps.build-and-publish.outputs.digest }}    ## echoing some of the info that comes from digest
 
 ## Now we will open the terminal and push everything.
-## Commands : git add . , then git commit -m "Docker ci cd yaml file is ready"  then git push -u orign main             
+## Commands : git add . , then git commit -m "Docker ci cd yaml file is ready"  then git push -u orign main 
+## After this when u go to the actions section of ur particular repo u will be able to see the tasks/jobs and workflows and run it there.            
