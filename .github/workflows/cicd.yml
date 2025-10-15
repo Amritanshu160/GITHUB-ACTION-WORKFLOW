@@ -14,6 +14,15 @@ on:
         branches: [ main ]
         
 jobs:
+    dockerbuild:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+            - name: Build the Docker Image
+              run: docker build . --file DockerFile --tag workflow-test:$(date +%s) ## Name of the dockerfile : DockerFile is specified over their
+
+
     build-and-test:  ## To run ur unit-testing(unit test cases) , build-and-test ---> this is the job name
         runs-on: ubuntu-latest  ## We are using container : ubuntu-latest container , it is running on ubuntu-latest container
         
@@ -84,4 +93,12 @@ jobs:
 
 ## Now we will open the terminal and push everything.
 ## Commands : git add . , then git commit -m "Docker ci cd yaml file is ready"  then git push -u orign main 
-## After this when u go to the actions section of ur particular repo u will be able to see the tasks/jobs and workflows and run it there.            
+## After this when u go to the actions section of ur particular repo u will be able to see the tasks/jobs and workflows and run it there.  
+
+## Now in docker hub u will be able to see ur flasktest-app. ---> This is ur new image that is specifically available. 
+## Inorder to call this(in my local): Open command prompt ---> docker pull amritanshu437/flasktest-app --> this image will get pulled with latest version
+## Now we will run this, in docker desktop also this image will be available
+## Run : docker run -p 5000:5000 amritanshu437/flasktest-app:latest
+## At localhost u will be able to access it ----> this u are accesing from the container(where flasktest-app in running)
+## We have automated this entire workflow --> now any changes that happens over here its going to build the entire docker and it is going to do everything and push the docker image over here.
+
